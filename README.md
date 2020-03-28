@@ -43,7 +43,6 @@ It aims to create a customizable, extendable and lightweight environment without
 - [Wayland](https://wayland.freedesktop.org)
 - [wayland-protocols](https://gitlab.freedesktop.org/wayland/wayland-protocols)
 - [wf-config](https://github.com/WayfireWM/wf-config)
-- [wf-shell](https://github.com/WayfireWM/wf-shell) (optional)
 - [wlroots](https://github.com/swaywm/wlroots)
 
 ## Installation

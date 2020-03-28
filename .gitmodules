@@ -4,3 +4,6 @@
 [submodule "subprojects/wlroots"]
 	path = subprojects/wlroots
 	url = https://github.com/swaywm/wlroots
+[submodule "subprojects/wf-utils"]
+	path = subprojects/wf-utils
+	url = https://github.com/WayfireWM/wf-utils.git
