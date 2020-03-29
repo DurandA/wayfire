@@ -1,12 +1,33 @@
 #include "wayfire/condition/access_interface.hpp"
+#include "wayfire/output.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view_access_interface.hpp"
+#include "wayfire/workspace-manager.hpp"
 #include <algorithm>
 #include <iostream>
 #include <string>
 
+extern "C"
+{
+#define static
+#define class class_t
+#define namespace namespace_t
+#include <wlr/xwayland.h>
+#undef static
+#undef class
+#undef namespace
+}
+
 namespace wf
 {
+
+view_access_interface_t::view_access_interface_t()
+{
+}
+
+view_access_interface_t::view_access_interface_t(wayfire_view view) : _view(view)
+{
+}
 
 view_access_interface_t::~view_access_interface_t()
 {
@@ -16,6 +37,12 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
 {
     variant_t out = std::string(""); // Default to empty string as output.
     error = false; // Assume things will go well.
+
+    // Cannot operate if no view is set.
+    if (_view == nullptr) {
+        error = true;
+        return out;
+    }
 
     if (identifier == "app_id")
     {
@@ -55,6 +82,64 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
     else if (identifier == "minimized")
     {
         out = _view->minimized;
+    }
+    else if (identifier == "tiled")
+    {
+        out = _view->tiled_edges != 0;
+    }
+    else if (identifier == "maximized")
+    {
+        out = _view->tiled_edges == TILED_EDGES_ALL;
+    }
+    else if (identifier == "floating")
+    {
+        out = _view->tiled_edges == 0;
+    }
+    else if (identifier == "type")
+    {
+        do
+        {
+            if (_view->role == VIEW_ROLE_TOPLEVEL)
+            {
+                out = std::string("toplevel");
+                break;
+            }
+
+            if (_view->role == VIEW_ROLE_UNMANAGED)
+            {
+                auto surf = _view->get_wlr_surface();
+                if (surf && wlr_surface_is_xwayland_surface(surf)) {
+                    out = std::string("x-or");
+                } else {
+                    out = std::string("unmanaged");
+                }
+                break;
+            }
+
+            if (!_view->get_output())
+            {
+                out = std::string("unknown");
+                break;
+            }
+
+            uint32_t layer = _view->get_output()->workspace->get_view_layer(_view);
+            if (layer == LAYER_BACKGROUND || layer == LAYER_BOTTOM)
+            {
+                out = std::string("background");
+            }
+            else if (layer == LAYER_TOP)
+            {
+                out = std::string("panel");
+            }
+            else if (layer == LAYER_LOCK)
+            {
+                out = std::string("overlay");
+            }
+            break;
+
+            out = std::string("unknown");
+        }
+        while (false);
     }
     else
     {
