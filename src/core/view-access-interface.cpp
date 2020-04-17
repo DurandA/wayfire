@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <wlr/config.h>
 
+#if WLR_HAS_XWAYLAND
 extern "C"
 {
 #define static
@@ -17,6 +19,7 @@ extern "C"
 #undef class
 #undef namespace
 }
+#endif
 
 namespace wf
 {
@@ -108,11 +111,13 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
             if (_view->role == VIEW_ROLE_UNMANAGED)
             {
                 auto surf = _view->get_wlr_surface();
+#if WLR_HAS_XWAYLAND
                 if (surf && wlr_surface_is_xwayland_surface(surf)) {
                     out = std::string("x-or");
-                } else {
-                    out = std::string("unmanaged");
+                    break;
                 }
+#endif
+                out = std::string("unmanaged");
                 break;
             }
 
