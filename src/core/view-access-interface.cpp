@@ -1,7 +1,7 @@
 #include "wayfire/condition/access_interface.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/view_access_interface.hpp"
+#include "wayfire/view-access-interface.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include <algorithm>
 #include <iostream>
