@@ -47,12 +47,9 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
         return out;
     }
 
-    if (identifier == "app_id")
-    {
+    if (identifier == "app_id") {
         out = _view->get_app_id();
-    }
-    else if (identifier == "title")
-    {
+    } else if (identifier == "title") {
         out = _view->get_title();
     }
     else if (identifier == "role")
@@ -74,28 +71,17 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
             break;
         }
     }
-    else if (identifier == "fullscreen")
-    {
+    else if (identifier == "fullscreen") {
         out = _view->fullscreen;
-    }
-    else if (identifier == "activated")
-    {
+    } else if (identifier == "activated") {
         out = _view->activated;
-    }
-    else if (identifier == "minimized")
-    {
+    } else if (identifier == "minimized") {
         out = _view->minimized;
-    }
-    else if (identifier == "tiled")
-    {
+    } else if (identifier == "tiled") {
         out = _view->tiled_edges != 0;
-    }
-    else if (identifier == "maximized")
-    {
+    } else if (identifier == "maximized") {
         out = _view->tiled_edges == TILED_EDGES_ALL;
-    }
-    else if (identifier == "floating")
-    {
+    } else if (identifier == "floating") {
         out = _view->tiled_edges == 0;
     }
     else if (identifier == "type")
@@ -128,16 +114,11 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
             }
 
             uint32_t layer = _view->get_output()->workspace->get_view_layer(_view);
-            if (layer == LAYER_BACKGROUND || layer == LAYER_BOTTOM)
-            {
+            if (layer == LAYER_BACKGROUND || layer == LAYER_BOTTOM) {
                 out = std::string("background");
-            }
-            else if (layer == LAYER_TOP)
-            {
+            } else if (layer == LAYER_TOP) {
                 out = std::string("panel");
-            }
-            else if (layer == LAYER_LOCK)
-            {
+            } else if (layer == LAYER_LOCK) {
                 out = std::string("overlay");
             }
             break;
@@ -146,8 +127,7 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
         }
         while (false);
     }
-    else
-    {
+    else {
         std::cerr << "View access interface: Get operation triggered to unsupported view property " << identifier << std::endl;
     }
 
