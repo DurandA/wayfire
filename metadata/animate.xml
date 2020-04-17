@@ -51,7 +51,7 @@
 		<option name="enabled_for" type="string">
 			<_short>Animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated.</_long>
-			<default>(type is toplevel || (type is x-or &amp;&amp; focuseable is true))</default>
+			<default>(type equals "toplevel" | (type equals "x-or" &amp; focuseable equals true))</default>
 		</option>
 		<option name="duration" type="int">
 			<_short>Duration</_short>
@@ -67,7 +67,7 @@
 		<option name="fade_enabled_for" type="string">
 			<_short>Fade animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated with a fade effect.</_long>
-			<default>type is overlay</default>
+			<default>type equals "overlay"</default>
 		</option>
 		<option name="fade_duration" type="int">
 			<_short>Fade duration</_short>

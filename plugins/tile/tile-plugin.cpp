@@ -1,12 +1,12 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/matcher.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/view-change-viewport-signal.hpp>
 
 #include "tree-controller.hpp"
-#include "../matcher/matcher.hpp"
 
 namespace wf
 {
@@ -38,8 +38,7 @@ class view_auto_tile_t : public wf::custom_data_t { };
 class tile_plugin_t : public wf::plugin_interface_t
 {
   private:
-    std::unique_ptr<wf::matcher::view_matcher> tile_by_default_matcher;
-    wf::option_wrapper_t<std::string> tile_by_default{"simple-tile/tile_by_default"};
+    wf::view_matcher_t tile_by_default{"simple-tile/tile_by_default"};
     wf::option_wrapper_t<bool> keep_fullscreen_on_adjacent{"simple-tile/keep_fullscreen_on_adjacent"};
     wf::option_wrapper_t<wf::buttonbinding_t> button_move{"simple-tile/button_move"}, button_resize{"simple-tile/button_resize"};
     wf::option_wrapper_t<wf::keybinding_t> key_toggle_tile{"simple-tile/key_toggle"}, key_toggle_fullscreen{"simple-tile/key_toggle_fullscreen"};
@@ -207,8 +206,7 @@ class tile_plugin_t : public wf::plugin_interface_t
 
     bool tile_window_by_default(wayfire_view view)
     {
-        return wf::matcher::evaluate(tile_by_default_matcher, view) &&
-            can_tile_view(view);
+        return tile_by_default.matches(view) && can_tile_view(view);
     }
 
     signal_callback_t on_view_attached = [=] (signal_data_t *data)
@@ -475,8 +473,6 @@ class tile_plugin_t : public wf::plugin_interface_t
         output->connect_signal("view-change-viewport", &on_view_change_viewport);
         output->connect_signal("view-minimize-request", &on_view_minimized);
         wf::get_core().connect_signal("view-move-to-output", &on_view_move_to_output);
-
-        tile_by_default_matcher = wf::matcher::get_matcher(tile_by_default);
         setup_callbacks();
     }
 

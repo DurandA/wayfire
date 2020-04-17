@@ -11,8 +11,7 @@
 #include "system_fade.hpp"
 #include "basic_animations.hpp"
 #include "fire/fire.hpp"
-
-#include "../matcher/matcher.hpp"
+#include <wayfire/matcher.hpp>
 
 void animation_base::init(wayfire_view, int, wf_animation_type) {}
 bool animation_base::step() {return false;}
@@ -155,15 +154,13 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
     wf::option_wrapper_t<int> fire_duration{"animate/fire_duration"};
 
     wf::option_wrapper_t<int> startup_duration{"animate/startup_duration"};
-    wf::option_wrapper_t<std::string> animation_enabled_for{"animate/enabled_for"};
-    wf::option_wrapper_t<std::string> fade_enabled_for{"animate/fade_enabled_for"};
-    wf::option_wrapper_t<std::string> zoom_enabled_for{"animate/zoom_enabled_for"};
-    wf::option_wrapper_t<std::string> fire_enabled_for{"animate/fire_enabled_for"};
 
-    std::unique_ptr<wf::matcher::view_matcher> animation_enabled_matcher,
-        fade_enabled_matcher, zoom_enabled_matcher, fire_enabled_matcher;
+    wf::view_matcher_t animation_enabled_for{"animate/enabled_for"};
+    wf::view_matcher_t fade_enabled_for{"animate/fade_enabled_for"};
+    wf::view_matcher_t zoom_enabled_for{"animate/zoom_enabled_for"};
+    wf::view_matcher_t fire_enabled_for{"animate/fire_enabled_for"};
 
-    public:
+  public:
     void init() override
     {
         singleton_plugin_t::init();
@@ -175,12 +172,6 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         output->connect_signal("pre-unmap-view", &on_view_unmapped);
         output->connect_signal("start-rendering", &on_render_start);
         output->connect_signal("view-minimize-request", &on_minimize_request);
-
-        animation_enabled_matcher =
-            wf::matcher::get_matcher(animation_enabled_for);
-        fade_enabled_matcher = wf::matcher::get_matcher(fade_enabled_for);
-        zoom_enabled_matcher = wf::matcher::get_matcher(zoom_enabled_for);
-        fire_enabled_matcher = wf::matcher::get_matcher(fire_enabled_for);
     }
 
     struct view_animation_t
@@ -195,22 +186,14 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         /* Determine the animation for the given view.
          * Note that the matcher plugin might not have been loaded, so
          * we need to have a fallback algorithm */
-        if (animation_enabled_matcher)
-        {
-            if (wf::matcher::evaluate(fade_enabled_matcher, view))
-                return {"fade", fade_duration};
-            if (wf::matcher::evaluate(zoom_enabled_matcher, view))
-                return {"zoom", zoom_duration};
-            if (wf::matcher::evaluate(fire_enabled_matcher, view))
-                return {"fire", fire_duration};
-            if (wf::matcher::evaluate(animation_enabled_matcher, view))
-                return {anim_type, default_duration};
-        }
-        else if (view->role == wf::VIEW_ROLE_TOPLEVEL ||
-            (view->role == wf::VIEW_ROLE_UNMANAGED && view->is_focuseable()))
-        {
+        if (fade_enabled_for.matches(view))
+            return {"fade", fade_duration};
+        if (zoom_enabled_for.matches(view))
+            return {"zoom", zoom_duration};
+        if (fire_enabled_for.matches(view))
+            return {"fire", fire_duration};
+        if (animation_enabled_for.matches(view))
             return {anim_type, default_duration};
-        }
 
         return {"none", 0};
     }
