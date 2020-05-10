@@ -60,7 +60,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
     {
         current_view_index = 0;
         views = output->workspace->get_views_on_workspace(
-            output->workspace->get_current_workspace(), wf::WM_LAYERS, true);
+            output->workspace->get_current_workspace(), wf::WM_LAYERS);
     }
 
     void view_chosen(int i, bool reorder_only)

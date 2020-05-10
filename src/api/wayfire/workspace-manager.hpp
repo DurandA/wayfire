@@ -122,22 +122,18 @@ class workspace_manager
      * order. The stacking order is the same as in get_views_in_layer().
      *
      * @param layer_mask - The layers whose views should be included
-     * @param wm_only - If set to true, then only the view's wm geometry
-     *        will be taken into account when computing visibility.
      */
     std::vector<wayfire_view> get_views_on_workspace(wf::point_t ws,
-        uint32_t layer_mask, bool wm_only);
+        uint32_t layer_mask);
 
     /**
      * Get a list of all views visible on the given workspace and in the given
      * sublayer.
      *
      * @param sublayer - The sublayer whose views are queried.
-     * @param wm_only - If set to true, then only the view's wm geometry
-     *        will be taken into account when computing visibility.
      */
     std::vector<wayfire_view> get_views_on_workspace_sublayer(wf::point_t ws,
-        nonstd::observer_ptr<sublayer_t> sublayer, bool wm_only);
+        nonstd::observer_ptr<sublayer_t> sublayer);
 
     /**
      * Ensure that the view's wm_geometry is visible on the workspace ws. This

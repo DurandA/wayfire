@@ -406,7 +406,7 @@ class output_viewport_manager_t
      *
      * @return true if the view is visible on the workspace vp
      */
-    bool view_visible_on(wayfire_view view, wf::point_t vp, bool use_bbox)
+    bool view_visible_on(wayfire_view view, wf::point_t vp)
     {
         auto g = output->get_relative_geometry();
         if (view->role != VIEW_ROLE_DESKTOP_ENVIRONMENT)
@@ -415,7 +415,7 @@ class output_viewport_manager_t
             g.y += (vp.y - current_vy) * g.height;
         }
 
-        if (view->has_transformer() && use_bbox) {
+        if (view->has_transformer()) {
             return view->intersects_region(g);
         } else {
             return g & view->get_wm_geometry();
@@ -458,7 +458,7 @@ class output_viewport_manager_t
     }
 
     std::vector<wayfire_view> get_views_on_workspace(wf::point_t vp,
-        uint32_t layers_mask, bool wm_only)
+        uint32_t layers_mask)
     {
         /* get all views in the given layers */
         std::vector<wayfire_view> views =
@@ -466,7 +466,7 @@ class output_viewport_manager_t
 
         /* remove those which aren't visible on the workspace */
         auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view) {
-            return !view_visible_on(view, vp, !wm_only);
+            return !view_visible_on(view, vp);
         });
 
         views.erase(it, views.end());
@@ -480,7 +480,7 @@ class output_viewport_manager_t
 
         /* remove those which aren't visible on the workspace */
         auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view) {
-            return !view_visible_on(view, workspace, true);
+            return !view_visible_on(view, workspace);
         });
 
         views.erase(it, views.end());
@@ -488,13 +488,13 @@ class output_viewport_manager_t
     }
 
     std::vector<wayfire_view> get_views_on_workspace_sublayer(wf::point_t vp,
-        nonstd::observer_ptr<sublayer_t> sublayer, bool wm_only)
+        nonstd::observer_ptr<sublayer_t> sublayer)
     {
         std::vector<wayfire_view> views =
             output->workspace->get_views_in_sublayer(sublayer);
 
         auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view) {
-            return !view_visible_on(view, vp, !wm_only);
+            return !view_visible_on(view, vp);
         });
 
         views.erase(it, views.end());
@@ -556,7 +556,7 @@ class output_viewport_manager_t
         /* we iterate through views on current viewport from bottom to top
          * that way we ensure that they will be focused before all others */
         auto views = get_views_on_workspace(get_current_workspace(),
-            MIDDLE_LAYERS, true);
+            MIDDLE_LAYERS);
 
         for (auto& view : wf::reverse(views))
             output->workspace->bring_to_front(view);
@@ -797,7 +797,7 @@ class workspace_manager::impl
             view->get_data_safe<layer_view_data_t>()->is_promoted = false;
 
         auto views = viewport_manager.get_views_on_workspace(
-            vp, LAYER_WORKSPACE, true);
+            vp, LAYER_WORKSPACE);
 
         /* Do not consider unmapped views or views which are not visible */
         auto it = std::remove_if(views.begin(), views.end(),
@@ -915,11 +915,11 @@ workspace_manager::workspace_manager(output_t *wo) : pimpl(new impl(wo)) {}
 workspace_manager::~workspace_manager() = default;
 
 /* Just pass to the appropriate function from above */
-bool workspace_manager::view_visible_on(wayfire_view view, wf::point_t ws) { return pimpl->viewport_manager.view_visible_on(view, ws, true); }
-std::vector<wayfire_view> workspace_manager::get_views_on_workspace(wf::point_t ws, uint32_t layer_mask, bool wm_only)
-{ return pimpl->viewport_manager.get_views_on_workspace(ws, layer_mask, wm_only); }
-std::vector<wayfire_view> workspace_manager::get_views_on_workspace_sublayer(wf::point_t ws, nonstd::observer_ptr<sublayer_t> sublayer, bool wm_only)
-{ return pimpl->viewport_manager.get_views_on_workspace_sublayer(ws, sublayer, wm_only); }
+bool workspace_manager::view_visible_on(wayfire_view view, wf::point_t ws) { return pimpl->viewport_manager.view_visible_on(view, ws); }
+std::vector<wayfire_view> workspace_manager::get_views_on_workspace(wf::point_t ws, uint32_t layer_mask)
+{ return pimpl->viewport_manager.get_views_on_workspace(ws, layer_mask); }
+std::vector<wayfire_view> workspace_manager::get_views_on_workspace_sublayer(wf::point_t ws, nonstd::observer_ptr<sublayer_t> sublayer)
+{ return pimpl->viewport_manager.get_views_on_workspace_sublayer(ws, sublayer); }
 
 nonstd::observer_ptr<sublayer_t> workspace_manager::create_sublayer(layer_t layer, sublayer_mode_t mode)
 { return pimpl->layer_manager.create_sublayer(layer, mode); }

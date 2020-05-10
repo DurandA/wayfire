@@ -422,7 +422,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
     {
         auto all_views = output->workspace->get_views_on_workspace(
             output->workspace->get_current_workspace(),
-            wf::WM_LAYERS | wf::LAYER_MINIMIZED, true);
+            wf::WM_LAYERS | wf::LAYER_MINIMIZED);
 
         decltype(all_views) mapped_views;
         for (auto view : all_views)
@@ -520,13 +520,13 @@ class WayfireSwitcher : public wf::plugin_interface_t
     std::vector<wayfire_view> get_background_views() const
     {
         return output->workspace->get_views_on_workspace(
-            output->workspace->get_current_workspace(), wf::BELOW_LAYERS, false);
+            output->workspace->get_current_workspace(), wf::BELOW_LAYERS);
     }
 
     std::vector<wayfire_view> get_overlay_views() const
     {
         return output->workspace->get_views_on_workspace(
-            output->workspace->get_current_workspace(), wf::ABOVE_LAYERS, false);
+            output->workspace->get_current_workspace(), wf::ABOVE_LAYERS);
     }
 
     void dim_background(float dim)

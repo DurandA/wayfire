@@ -631,7 +631,7 @@ class wf::render_manager::impl
         {
             visible_views = output->workspace->get_views_on_workspace(
                 output->workspace->get_current_workspace(),
-                wf::MIDDLE_LAYERS, false);
+                wf::MIDDLE_LAYERS);
 
             // send to all panels/backgrounds/etc
             auto additional_views = output->workspace->get_views_in_layer(
@@ -796,7 +796,7 @@ class wf::render_manager::impl
         workspace_stream_t& stream)
     {
         auto views = output->workspace->get_views_on_workspace(stream.ws,
-            wf::VISIBLE_LAYERS, false);
+            wf::VISIBLE_LAYERS);
 
         schedule_drag_icon(repaint);
         for (auto& v : views)

@@ -210,6 +210,7 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
 
         auto fs_views = output->workspace->get_promoted_views(
             output->workspace->get_current_workspace());
+
         if (fs_views.size())
         {
             get_instance().idle_inhibit();

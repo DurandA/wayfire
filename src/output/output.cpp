@@ -51,7 +51,7 @@ std::string wf::output_t::to_string() const
 void wf::output_impl_t::refocus(wayfire_view skip_view, uint32_t layers)
 {
     wayfire_view next_focus = nullptr;
-    auto views = workspace->get_views_on_workspace(workspace->get_current_workspace(), layers, true);
+    auto views = workspace->get_views_on_workspace(workspace->get_current_workspace(), layers);
 
     for (auto v : views)
     {
@@ -72,7 +72,7 @@ void wf::output_t::refocus(wayfire_view skip_view)
     uint32_t layers = focused_layer <= LAYER_WORKSPACE ?  WM_LAYERS : focused_layer;
 
     auto views = workspace->get_views_on_workspace(
-        workspace->get_current_workspace(), layers, true);
+        workspace->get_current_workspace(), layers);
 
     if (views.empty())
     {
@@ -264,7 +264,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, bool raise)
 wayfire_view wf::output_t::get_top_view() const
 {
     auto views = workspace->get_views_on_workspace(workspace->get_current_workspace(),
-        LAYER_WORKSPACE, false);
+        LAYER_WORKSPACE);
 
     return views.empty() ? nullptr : views[0];
 }
