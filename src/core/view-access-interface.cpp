@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <wlr/config.h>
+#include <wlr/util/edges.h>
 
 #if WLR_HAS_XWAYLAND
 extern "C"
@@ -77,8 +78,14 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
         out = _view->activated;
     } else if (identifier == "minimized") {
         out = _view->minimized;
-    } else if (identifier == "tiled") {
-        out = _view->tiled_edges != 0;
+    } else if (identifier == "tiled-left") {
+        out = (_view->tiled_edges & WLR_EDGE_LEFT) > 0;
+    } else if (identifier == "tiled-right") {
+        out = (_view->tiled_edges & WLR_EDGE_RIGHT) > 0;
+    } else if (identifier == "tiled-top") {
+        out = (_view->tiled_edges & WLR_EDGE_TOP) > 0;
+    } else if (identifier == "tiled-bottom") {
+        out = (_view->tiled_edges & WLR_EDGE_BOTTOM) > 0;
     } else if (identifier == "maximized") {
         out = _view->tiled_edges == TILED_EDGES_ALL;
     } else if (identifier == "floating") {

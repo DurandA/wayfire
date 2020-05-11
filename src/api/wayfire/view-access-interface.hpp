@@ -24,7 +24,10 @@ namespace wf
  * "fullscreen" -> bool
  * "activated" -> bool
  * "minimized" -> bool
- * "tiled" -> bool
+ * "tiled-left" -> bool
+ * "tiled-right" -> bool
+ * "tiled-top" -> bool
+ * "tiled-bottom" -> bool
  * "maximized" -> bool
  * "floating" -> bool
  * "type" -> std::string (This will return a type string like the matcher plugin did)
