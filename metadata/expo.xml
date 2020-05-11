@@ -19,10 +19,10 @@
 			<_long>Sets the zoom duration in milliseconds.</_long>
 			<default>300</default>
 		</option>
-		<option name="offset" type="double">
+		<option name="offset" type="int">
 			<_short>Delimiter offset</_short>
 			<_long>Sets the delimiter offset (in pixels) between workspaces.</_long>
-			<default>10.0</default>
+			<default>10</default>
 		</option>
 	</plugin>
 </wayfire>

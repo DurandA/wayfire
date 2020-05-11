@@ -1,33 +1,15 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/debug.hpp>
-#include <wayfire/opengl.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-stream.hpp>
-#include <wayfire/workspace-manager.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <wayfire/util/duration.hpp>
+
 #include <wayfire/plugins/common/view-change-viewport-signal.hpp>
+#include <wayfire/plugins/common/workspace-wall.hpp>
+#include <wayfire/plugins/common/geometry-animation.hpp>
 
 /* TODO: this file should be included in some header maybe(plugin.hpp) */
 #include <linux/input-event-codes.h>
 #include "../wobbly/wobbly-signal.hpp"
 #include "move-snap-helper.hpp"
-
-using namespace wf::animation;
-
-class expo_animation_t : public duration_t
-{
-  public:
-    using duration_t::duration_t;
-    timed_transition_t scale_x{*this};
-    timed_transition_t scale_y{*this};
-    timed_transition_t off_x{*this};
-    timed_transition_t off_y{*this};
-    timed_transition_t delimiter_offset{*this};
-};
 
 static bool begins_with(std::string word, std::string prefix)
 {
@@ -54,7 +36,7 @@ class wayfire_expo : public wf::plugin_interface_t
         if (!state.active) {
             return activate();
         } else {
-            if (!animation.running() || state.zoom_in) {
+            if (!zoom_animation.running() || state.zoom_in) {
                 deactivate();
                 return true;
             }
@@ -66,14 +48,12 @@ class wayfire_expo : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_binding{"expo/toggle"};
     wf::option_wrapper_t<wf::color_t> background_color{"expo/background"};
     wf::option_wrapper_t<int> zoom_duration{"expo/duration"};
-    wf::option_wrapper_t<double> delimiter_offset{"expo/offset"};
-    expo_animation_t animation{zoom_duration};
+    wf::option_wrapper_t<int> delimiter_offset{"expo/offset"};
+    wf::geometry_animation_t zoom_animation{zoom_duration};
 
 
     std::vector<wf::activator_callback> keyboard_select_cbs;
     std::vector<wf::option_sptr_t<wf::activatorbinding_t>> keyboard_select_options;
-
-    wf::render_hook_t renderer;
     wf::signal_callback_t view_removed = [=] (wf::signal_data_t *event)
     {
         if (get_signaled_view(event) == moving_view)
@@ -87,7 +67,7 @@ class wayfire_expo : public wf::plugin_interface_t
     } state;
 
     int target_vx, target_vy;
-    std::vector<std::vector<wf::workspace_stream_t>> streams;
+    std::unique_ptr<wf::workspace_wall_t> wall;
 
   public:
     void setup_workspace_bindings_from_config()
@@ -121,12 +101,12 @@ class wayfire_expo : public wf::plugin_interface_t
             auto value = wf::option_type::from_string<wf::activatorbinding_t> (opt->get_value_str());
             keyboard_select_options.push_back(wf::create_option(value.value()));
 
-            keyboard_select_cbs.push_back([=] (wf::activator_source_t, uint32_t) 
-            { 
+            keyboard_select_cbs.push_back([=] (wf::activator_source_t, uint32_t)
+            {
                 if (!state.active) {
                     return false;
                 } else {
-                    if (!animation.running() || state.zoom_in){
+                    if (!zoom_animation.running() || state.zoom_in){
                         target_vx = target.x;
                         target_vy = target.y;
                         deactivate();
@@ -143,15 +123,8 @@ class wayfire_expo : public wf::plugin_interface_t
         grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
 
         setup_workspace_bindings_from_config();
-
-        auto wsize = output->workspace->get_workspace_grid_size();
-        streams.resize(wsize.width);
-        for (int i = 0; i < wsize.width; i++)
-        {
-            streams[i].resize(wsize.height);
-            for (int j = 0; j < wsize.height; j++)
-                streams[i][j].ws = {i, j};
-        }
+        wall = std::make_unique<wf::workspace_wall_t> (this->output);
+        wall->connect_signal("frame", &on_frame);
 
         output->add_activator(toggle_binding, &toggle_cb);
         grab_interface->callbacks.pointer.button = [=] (uint32_t button, uint32_t state)
@@ -192,8 +165,6 @@ class wayfire_expo : public wf::plugin_interface_t
             finalize_and_exit();
         };
 
-        renderer = [=] (const wf::framebuffer_t& buffer) { render(buffer); };
-
         output->connect_signal("detach-view", &view_removed);
         output->connect_signal("view-disappeared", &view_removed);
     }
@@ -207,36 +178,63 @@ class wayfire_expo : public wf::plugin_interface_t
 
         state.active = true;
         state.button_pressed = false;
-        animation.start();
+        start_zoom(true);
 
         auto cws = output->workspace->get_current_workspace();
         target_vx = cws.x;
         target_vy = cws.y;
-        calculate_zoom(true);
-
-        output->render->set_renderer(renderer);
-        output->render->schedule_redraw();
 
         for (size_t i = 0; i < keyboard_select_cbs.size(); i++)
-        {
             output->add_activator(keyboard_select_options[i], &keyboard_select_cbs[i]);
-        }
 
         return true;
+    }
+
+    void start_zoom(bool zoom_in)
+    {
+        wall->set_background_color(background_color);
+        wall->set_gap_size(this->delimiter_offset);
+        if (zoom_in)
+        {
+            zoom_animation.set_start(wall->get_workspace_rectangle(
+                    output->workspace->get_current_workspace()));
+
+            /* Make sure workspaces are centered */
+            auto wsize = output->workspace->get_workspace_grid_size();
+            auto size = output->get_screen_size();
+            const int maxdim = std::max(wsize.width, wsize.height);
+            const int gap = this->delimiter_offset;
+
+            const int fullw = (gap + size.width) * maxdim + gap;
+            const int fullh = (gap + size.height) * maxdim + gap;
+
+            auto rectangle = wall->get_wall_rectangle();
+            rectangle.x -= (fullw - rectangle.width) / 2;
+            rectangle.y -= (fullh - rectangle.height) / 2;
+            rectangle.width = fullw;
+            rectangle.height = fullh;
+            zoom_animation.set_end(rectangle);
+        } else
+        {
+            zoom_animation.set_start(zoom_animation);
+            zoom_animation.set_end(
+                wall->get_workspace_rectangle({target_vx, target_vy}));
+        }
+
+        state.zoom_in = zoom_in;
+        zoom_animation.start();
+        wall->set_viewport(zoom_animation);
+        wall->start_output_renderer();
+        output->render->schedule_redraw();
     }
 
     void deactivate()
     {
         end_move(false);
-        animation.start();
-        output->render->schedule_redraw();
+        start_zoom(false);
         output->workspace->set_workspace({target_vx, target_vy});
-        calculate_zoom(false);
-
         for (size_t i = 0; i < keyboard_select_cbs.size(); i++)
-        {
             output->rem_binding(&keyboard_select_cbs[i]);
-        }
     }
 
     wf::geometry_t get_grid_geometry()
@@ -255,7 +253,7 @@ class wayfire_expo : public wf::plugin_interface_t
     wf::point_t input_grab_origin;
     void handle_input_press(int32_t x, int32_t y, uint32_t state)
     {
-        if (animation.running())
+        if (zoom_animation.running())
             return;
 
         if (state == WLR_BUTTON_RELEASED && !this->moving_view) {
@@ -291,7 +289,7 @@ class wayfire_expo : public wf::plugin_interface_t
          * subsequent motion eveennts while grabbed are allowed */
         input_grab_origin = offscreen_point;
 
-        if (!animation.running() && first_click)
+        if (!zoom_animation.running() && first_click)
         {
             start_move(find_view_at_coordinates(to.x, to.y), to);
             /* Fall through to the moving view case */
@@ -427,124 +425,18 @@ class wayfire_expo : public wf::plugin_interface_t
         target_vy = y / og.height;
     }
 
-    void update_streams()
+    wf::signal_connection_t on_frame = {[=] (wf::signal_data_t*)
     {
-        auto wsize = output->workspace->get_workspace_grid_size();
-        for(int j = 0; j < wsize.height; j++)
-        {
-            for(int i = 0; i < wsize.width; i++)
-            {
-                if (!streams[i][j].running)
-                {
-                    output->render->workspace_stream_start(streams[i][j]);
-                } else
-                {
-                    output->render->workspace_stream_update(streams[i][j],
-                        animation.scale_x, animation.scale_y);
-                }
-            }
-        }
-    }
-
-    /* Renders a grid of all active workspaces. It "renders" the workspaces
-     * in their correct place/size, then scales+translates the whole scene so
-     * that all of the workspaces become visible.
-     *
-     * The scale+translate part is calculated in zoom_target */
-    void render(const wf::framebuffer_t &fb)
-    {
-        update_streams();
-
-        auto wsize = output->workspace->get_workspace_grid_size();
-        auto cws = output->workspace->get_current_workspace();
-        auto screen_size = output->get_screen_size();
-
-        auto translate = glm::translate(glm::mat4(1.0), glm::vec3((double)animation.off_x, (double)animation.off_y, 0));
-        auto scale     = glm::scale(glm::mat4(1.0), glm::vec3((double)animation.scale_x, (double)animation.scale_y, 1));
-        auto scene_transform = fb.transform * translate * scale; // scale+translate part
-
-        OpenGL::render_begin(fb);
-        OpenGL::clear(background_color);
-        fb.logic_scissor(fb.geometry);
-
-        /* Space between adjacent workspaces */
-        float hspacing = 1.0 * animation.delimiter_offset / screen_size.width;
-        float vspacing = 1.0 * animation.delimiter_offset / screen_size.height;
-        if (fb.wl_transform & 1)
-            std::swap(hspacing, vspacing);
-
-        for(int j = 0; j < wsize.height; j++)
-        {
-            for(int i = 0; i < wsize.width; i++)
-            {
-                /* First, center each workspace on the output, taking spacing into account */
-                gl_geometry out_geometry = {
-                    .x1 = -1 + hspacing,
-                    .y1 = 1 - vspacing,
-                    .x2 = 1 - hspacing,
-                    .y2 = -1 + vspacing,
-                };
-
-                /* Then, calculate translation matrix so that the workspace gets
-                 * in its correct position relative to the focused workspace */
-                auto translation = glm::translate(glm::mat4(1.0),
-                    {(i - cws.x) * 2.0f, (cws.y - j) * 2.0f, 0.0f});
-
-                auto workspace_transform = scene_transform * translation;
-
-                /* Undo rotation of the workspace */
-                workspace_transform = workspace_transform * glm::inverse(fb.transform);
-
-                OpenGL::render_transformed_texture(streams[i][j].buffer.tex,
-                    out_geometry, {}, workspace_transform);
-            }
-        }
-
-        GL_CALL(glUseProgram(0));
-        OpenGL::render_end();
-
-        if (animation.running())
+        if (zoom_animation.running())
         {
             output->render->schedule_redraw();
+            wall->set_viewport(zoom_animation);
         }
         else if (!state.zoom_in)
         {
             finalize_and_exit();
         }
-    }
-
-    void calculate_zoom(bool zoom_in)
-    {
-        auto wsize = output->workspace->get_workspace_grid_size();
-        int max = std::max(wsize.width, wsize.height);
-
-        float diff_w = (max - wsize.width) / (1. * max);
-        float diff_h = (max - wsize.height) / (1. * max);
-
-        wsize.width = wsize.height = max;
-
-        float center_w = wsize.width / 2.f;
-        float center_h = wsize.height / 2.f;
-
-        animation.scale_x.set(1, 1.f / wsize.width);
-        animation.scale_y.set(1, 1.f / wsize.height);
-        animation.off_x.set(0, ((target_vx - center_w) * 2.f + 1.f) / wsize.width + diff_w);
-        animation.off_y.set(0, ((center_h - target_vy) * 2.f - 1.f) / wsize.height - diff_h);
-
-        animation.delimiter_offset.set(0, delimiter_offset);
-
-        if (!zoom_in)
-        {
-            animation.scale_x.flip();
-            animation.scale_y.flip();
-            animation.off_x.flip();
-            animation.off_y.flip();
-            animation.delimiter_offset.flip();
-        }
-
-        state.zoom_in = zoom_in;
-        animation.start();
-    }
+    }};
 
     void finalize_and_exit()
     {
@@ -552,14 +444,8 @@ class wayfire_expo : public wf::plugin_interface_t
         output->deactivate_plugin(grab_interface);
         grab_interface->ungrab();
 
-        auto wsize = output->workspace->get_workspace_grid_size();
-        for (int i = 0; i < wsize.width; i++) {
-            for (int j = 0; j < wsize.height; j++) {
-                output->render->workspace_stream_stop(streams[i][j]);
-            }
-        }
-
-        output->render->set_renderer(nullptr);
+        wall->stop_output_renderer();
+        wall->set_viewport({0, 0, 0, 0});
     }
 
     void fini() override
@@ -569,14 +455,6 @@ class wayfire_expo : public wf::plugin_interface_t
 
         if (state.active)
             finalize_and_exit();
-
-        OpenGL::render_begin();
-        for (auto& row : streams)
-        {
-            for (auto& stream: row)
-                stream.buffer.release();
-        }
-        OpenGL::render_end();
 
         output->rem_binding(&toggle_cb);
     }
