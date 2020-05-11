@@ -1005,14 +1005,7 @@ void wf::view_interface_t::unref()
 }
 
 void wf::view_interface_t::initialize()
-{
-    if (get_output() && get_output()->workspace->get_view_layer(self()) == 0)
-    {
-        /* Ensure the view is always on a given layer, because otherwise there
-         * is no way to iterate over all views which belong to a given output.*/
-        get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
-    }
-}
+{ }
 
 void wf::view_interface_t::deinitialize()
 {

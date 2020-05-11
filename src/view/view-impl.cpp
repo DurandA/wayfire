@@ -281,7 +281,10 @@ void wf::wlr_view_t::map(wlr_surface *surface)
     update_size();
 
     if (role == VIEW_ROLE_TOPLEVEL && !parent)
+    {
+        get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
         get_output()->focus_view(self(), true);
+    }
 
     damage();
     emit_view_map();

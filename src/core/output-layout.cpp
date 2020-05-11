@@ -192,8 +192,11 @@ namespace wf
 
         /* just remove all other views - backgrounds, panels, etc.
          * desktop views have been removed by the previous cycle */
-        for (auto& view : from->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : wf::get_core().get_all_views())
         {
+            if (view->get_output() != from)
+                continue;
+
             if (view->is_mapped())
                 view->close();
 
