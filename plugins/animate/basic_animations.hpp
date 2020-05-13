@@ -1,5 +1,4 @@
 #include "animate.hpp"
-#include <wayfire/debug.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>

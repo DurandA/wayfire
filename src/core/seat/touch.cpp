@@ -1,6 +1,5 @@
 #include <cmath>
 
-#include "wayfire/debug.hpp"
 #include "touch.hpp"
 #include "input-manager.hpp"
 #include "../core-impl.hpp"

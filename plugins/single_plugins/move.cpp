@@ -7,7 +7,6 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/output-layout.hpp>
-#include <wayfire/debug.hpp>
 
 #include <cmath>
 #include <linux/input.h>

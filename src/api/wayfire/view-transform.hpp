@@ -3,7 +3,6 @@
 
 #include <wayfire/view.hpp>
 #include <wayfire/opengl.hpp>
-#include <wayfire/debug.hpp>
 
 namespace wf
 {

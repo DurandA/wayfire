@@ -2,7 +2,6 @@
 #include "shaders.hpp"
 #include <wayfire/core.hpp>
 #include <thread>
-#include <wayfire/debug.hpp>
 
 void Particle::update(float time)
 {

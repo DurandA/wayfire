@@ -1,8 +1,6 @@
 #include "cubemap.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
-
-#include <wayfire/debug.hpp>
 #include <config.h>
 #include <wayfire/core.hpp>
 #include <wayfire/img.hpp>

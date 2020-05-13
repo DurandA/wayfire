@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <map>
-#include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
 extern "C"
 {

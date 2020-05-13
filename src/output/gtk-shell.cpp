@@ -5,7 +5,6 @@
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/core.hpp"
-#include "wayfire/debug.hpp"
 #include <map>
 
 struct wf_gtk_shell {

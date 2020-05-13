@@ -1,5 +1,4 @@
 #include <wayfire/plugin.hpp>
-#include <wayfire/debug.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>

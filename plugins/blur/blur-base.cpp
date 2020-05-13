@@ -1,5 +1,4 @@
 #include "blur.hpp"
-#include <wayfire/debug.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/util/log.hpp>

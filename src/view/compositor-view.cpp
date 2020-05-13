@@ -3,7 +3,6 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/debug.hpp>
 #include <cstring>
 
 #include <glm/gtc/matrix_transform.hpp>

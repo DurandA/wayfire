@@ -4,7 +4,6 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/nonstd/noncopyable.hpp>
-#include <wayfire/debug.hpp>
 #include <type_traits>
 #include <map>
 #include <wayfire/core.hpp>

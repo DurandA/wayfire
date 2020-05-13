@@ -222,3 +222,33 @@ void wf::print_trace(bool fast_mode)
 
     free(symbollist);
 }
+
+/* ------------------- Impl of debugging functions ---------------------------*/
+#include <iomanip>
+std::ostream& operator << (std::ostream& out, const glm::mat4& mat)
+{
+    out << std::endl;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            out << std::setw(10) << std::fixed << std::setprecision(5)
+                << mat[j][i] << std::setw(0) << ",";
+        }
+        out << std::endl;
+    }
+
+    return out;
+}
+
+wf::pointf_t operator * (const glm::mat4& m, const wf::pointf_t& p)
+{
+    glm::vec4 v = {p.x, p.y, 0.0, 1.0};
+    v = m * v;
+    return wf::pointf_t{v.x, v.y};
+}
+
+wf::pointf_t operator * (const glm::mat4& m, const wf::point_t& p)
+{
+    return m * wf::pointf_t{1.0 * p.x, 1.0 * p.y};
+}

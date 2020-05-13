@@ -1,5 +1,4 @@
 #include <wayfire/view.hpp>
-#include <wayfire/debug.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/workspace-manager.hpp>

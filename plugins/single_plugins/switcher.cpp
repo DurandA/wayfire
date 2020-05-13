@@ -1,7 +1,6 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>
-#include <wayfire/debug.hpp>
 #include <wayfire/core.hpp>
 
 #include <wayfire/view.hpp>

@@ -2,7 +2,6 @@
 #include <wayfire/view.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/debug.hpp>
 #include <wayfire/signal-definitions.hpp>
 
 #include "deco-subsurface.hpp"

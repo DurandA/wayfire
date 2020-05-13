@@ -7,7 +7,6 @@
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/debug.hpp>
 #include <wayfire/decorator.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/signal-definitions.hpp>

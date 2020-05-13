@@ -3,7 +3,6 @@
  */
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
-#include "wayfire/debug.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire-shell.hpp"

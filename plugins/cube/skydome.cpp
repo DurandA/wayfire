@@ -1,5 +1,4 @@
 #include "skydome.hpp"
-#include <wayfire/debug.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/img.hpp>
 

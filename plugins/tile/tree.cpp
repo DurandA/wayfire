@@ -1,5 +1,4 @@
 #include "tree.hpp"
-#include <wayfire/debug.hpp>
 #include <wayfire/util.hpp>
 
 #include <wayfire/output.hpp>

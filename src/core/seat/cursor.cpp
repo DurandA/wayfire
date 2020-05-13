@@ -3,7 +3,6 @@
 #include "../core-impl.hpp"
 #include "input-manager.hpp"
 #include "wayfire/workspace-manager.hpp"
-#include "wayfire/debug.hpp"
 #include "wayfire/compositor-surface.hpp"
 #include "wayfire/output-layout.hpp"
 #include "tablet.hpp"

@@ -6,7 +6,6 @@
 #include "wayfire/workspace-manager.hpp"
 #include "../core/seat/input-manager.hpp"
 #include "../core/opengl-priv.hpp"
-#include "wayfire/debug.hpp"
 #include "../main.hpp"
 #include <algorithm>
 #include <wayfire/nonstd/reverse.hpp>

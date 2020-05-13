@@ -1,4 +1,3 @@
-#include "wayfire/debug.hpp"
 #include "output-impl.hpp"
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
