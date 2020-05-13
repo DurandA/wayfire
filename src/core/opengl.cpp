@@ -420,8 +420,6 @@ void wf::framebuffer_t::logic_scissor(wlr_box box) const
     scissor(framebuffer_box_from_geometry_box(box));
 }
 
-#define WF_PI 3.141592f
-
 /* look up the actual values of wl_output_transform enum
  * All _flipped transforms have values (regular_transfrom + 4) */
 glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
@@ -436,11 +434,11 @@ glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
     glm::mat4 rotation_matrix(1.0);
 
     if (rotation == WL_OUTPUT_TRANSFORM_90)
-        rotation_matrix = glm::rotate(rotation_matrix,  WF_PI / 2.0f, {0, 0, 1});
+        rotation_matrix = glm::rotate(rotation_matrix, glm::radians(90.0f), {0, 0, 1});
     if (rotation == WL_OUTPUT_TRANSFORM_180)
-        rotation_matrix = glm::rotate(rotation_matrix,  WF_PI,        {0, 0, 1});
+        rotation_matrix = glm::rotate(rotation_matrix, glm::radians(180.0f), {0, 0, 1});
     if (rotation == WL_OUTPUT_TRANSFORM_270)
-        rotation_matrix = glm::rotate(rotation_matrix, -WF_PI / 2.0f, {0, 0, 1});
+        rotation_matrix = glm::rotate(rotation_matrix, glm::radians(270.0f), {0, 0, 1});
 
     return rotation_matrix * scale;
 }
