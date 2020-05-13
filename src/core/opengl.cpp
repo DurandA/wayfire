@@ -429,7 +429,7 @@ glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
     glm::mat4 scale = glm::mat4(1.0);
 
     if (transform >= 4)
-        scale = glm::scale(scale, {-1, 1, 0});
+        scale = glm::scale(scale, {-1, 1, 1});
 
     /* remove the third bit if it's set */
     uint32_t rotation = transform & (~4);
