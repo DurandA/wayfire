@@ -78,6 +78,12 @@ variant_t view_access_interface_t::get(const std::string &identifier, bool &erro
         out = _view->activated;
     } else if (identifier == "minimized") {
         out = _view->minimized;
+    } else if (identifier == "visible") {
+        out = _view->is_visible();
+    } else if (identifier == "focusable") {
+        out = _view->is_focuseable();
+    } else if (identifier == "mapped") {
+        out = _view->is_mapped();
     } else if (identifier == "tiled-left") {
         out = (_view->tiled_edges & WLR_EDGE_LEFT) > 0;
     } else if (identifier == "tiled-right") {
