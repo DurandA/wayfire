@@ -1,5 +1,6 @@
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/util/duration.hpp>
+#include <cmath>
 
 namespace wf
 {
@@ -38,4 +39,20 @@ class geometry_animation_t : public duration_t
         this->height.*member = geometry.height;
     }
 };
+
+/** Interpolate the geometry between a and b with alpha (in [0..1]), i.e a * (1-alpha) + b * alpha */
+static inline wf::geometry_t interpolate(wf::geometry_t a, wf::geometry_t b, double alpha)
+{
+    const auto& interp = [=] (int32_t wf::geometry_t::* member) -> int32_t {
+        return std::round((1 - alpha) * a.*member + alpha * b.*member);
+    };
+
+    return {
+        interp(&wf::geometry_t::x),
+        interp(&wf::geometry_t::y),
+        interp(&wf::geometry_t::width),
+        interp(&wf::geometry_t::height)
+    };
+}
+
 }
