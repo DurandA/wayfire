@@ -261,9 +261,7 @@ class vswipe : public wf::plugin_interface_t
         state.swiping = false;
         grab_interface->ungrab();
         output->deactivate_plugin(grab_interface);
-
-        wall->stop_output_renderer();
-        wall->set_viewport({0, 0, 0, 0});
+        wall->stop_output_renderer(true);
         state.animating = false;
     }
 

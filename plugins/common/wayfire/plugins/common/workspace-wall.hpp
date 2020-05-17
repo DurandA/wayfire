@@ -49,7 +49,7 @@ class workspace_wall_t : public wf::signal_provider_t
 
     ~workspace_wall_t()
     {
-        stop_output_renderer();
+        stop_output_renderer(false);
 
         OpenGL::render_begin();
         for (auto& row : this->streams)
@@ -160,14 +160,20 @@ class workspace_wall_t : public wf::signal_provider_t
 
     /**
      * Stop repainting the whole output.
+     *
+     * @param reset_viewport If true, the viewport will be reset to {0, 0, 0, 0}
+     *   and thus all workspace streams will be stopped.
      */
-    void stop_output_renderer()
+    void stop_output_renderer(bool reset_viewport)
     {
         if (render_hook_set)
         {
             this->output->render->set_renderer(nullptr);
             render_hook_set = false;
         }
+
+        if (reset_viewport)
+            set_viewport({0, 0, 0, 0});
     }
 
     /**

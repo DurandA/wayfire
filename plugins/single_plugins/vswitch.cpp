@@ -260,8 +260,7 @@ class vswitch : public wf::plugin_interface_t
         slide_done();
         unset_grabbed_view();
 
-        wall->stop_output_renderer();
-        wall->set_viewport({0, 0, 0, 0});
+        wall->stop_output_renderer(true);
         output->deactivate_plugin(grab_interface);
     }
 

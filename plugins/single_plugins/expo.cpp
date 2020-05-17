@@ -443,9 +443,7 @@ class wayfire_expo : public wf::plugin_interface_t
         state.active = false;
         output->deactivate_plugin(grab_interface);
         grab_interface->ungrab();
-
-        wall->stop_output_renderer();
-        wall->set_viewport({0, 0, 0, 0});
+        wall->stop_output_renderer(true);
     }
 
     void fini() override
