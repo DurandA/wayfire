@@ -11,14 +11,7 @@
 #include <linux/input.h>
 #include <wayfire/util/duration.hpp>
 
-class vswitch_view_transformer : public wf::view_2D
-{
-  public:
-    static const std::string name;
-    vswitch_view_transformer(wayfire_view view) : view_2D(view) {}
-    virtual uint32_t get_z_order() override { return wf::TRANSFORMER_BLUR - 1; }
-};
-const std::string vswitch_view_transformer::name = "vswitch-transformer";
+const std::string vswitch_view_transformer_name = "vswitch-transformer";
 
 using namespace wf::animation;
 class vswitch_animation_t : public duration_t
@@ -118,8 +111,8 @@ class vswitch : public wf::plugin_interface_t
         if (view && !grabbed_view)
         {
             grabbed_view = view;
-            view->add_transformer(std::make_unique<vswitch_view_transformer>(view),
-                vswitch_view_transformer::name);
+            view->add_transformer(std::make_unique<wf::view_2D>(view),
+                vswitch_view_transformer_name);
             view->set_visible(false); // view is rendered as overlay
         }
 
@@ -142,7 +135,7 @@ class vswitch : public wf::plugin_interface_t
             return;
 
         this->grabbed_view->set_visible(true);
-        this->grabbed_view->pop_transformer(vswitch_view_transformer::name);
+        this->grabbed_view->pop_transformer(vswitch_view_transformer_name);
         this->grabbed_view = nullptr;
     }
 
@@ -188,7 +181,7 @@ class vswitch : public wf::plugin_interface_t
         double progress = animation.progress();
 
         auto tr = dynamic_cast<wf::view_2D*>( grabbed_view->get_transformer(
-                vswitch_view_transformer::name).get());
+                vswitch_view_transformer_name).get());
 
         static constexpr double smoothing_in = 0.4;
         static constexpr double smoothing_out = 0.2;
@@ -239,7 +232,7 @@ class vswitch : public wf::plugin_interface_t
 
         if (grabbed_view)
         {
-            grabbed_view->pop_transformer(vswitch_view_transformer::name);
+            grabbed_view->pop_transformer(vswitch_view_transformer_name);
             auto wm = grabbed_view->get_wm_geometry();
             grabbed_view->move(wm.x + animation.dx.end * output_g.width,
                 wm.y + animation.dy.end * output_g.height);
