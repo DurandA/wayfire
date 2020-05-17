@@ -175,11 +175,10 @@ class vswitch : public wf::plugin_interface_t
 
     void render_overlay_view(const wf::framebuffer_t& fb)
     {
-        /* Update the grabbed view on idle, because we cannot damage while
-         * in render cycle. Also, capture current progress in lambda, because
-         * idle may happen much later in time with different time. */
-        double progress = animation.progress();
+        if (!grabbed_view)
+            return;
 
+        double progress = animation.progress();
         auto tr = dynamic_cast<wf::view_2D*>( grabbed_view->get_transformer(
                 vswitch_view_transformer_name).get());
 
