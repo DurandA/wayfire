@@ -49,5 +49,15 @@
 			<_long>Sets the duration of the workspace switching animation in milliseconds.</_long>
 			<default>300</default>
 		</option>
+		<option name="gap" type="int">
+			<_short>Gap size</_short>
+			<_long>Sets the gap between workspaces when animating the transition between them.</_long>
+			<default>20</default>
+		</option>
+		<option name="background" type="color">
+			<_short>Background color</_short>
+			<_long>Sets the background color of gaps.</_long>
+			<default>0.1 0.1 0.1 1.0</default>
+		</option>
 	</plugin>
 </wayfire>

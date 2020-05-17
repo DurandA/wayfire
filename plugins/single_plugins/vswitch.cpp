@@ -1,25 +1,22 @@
 #include <wayfire/plugin.hpp>
-#include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/view-transform.hpp>
-#include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-manager.hpp>
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
+#include <cmath>
 
-#include <queue>
+#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
+#include <wayfire/plugins/common/geometry-animation.hpp>
+#include <wayfire/plugins/common/workspace-wall.hpp>
+
 #include <linux/input.h>
-#include <utility>
-#include <set>
-#include "../wobbly/wobbly-signal.hpp"
 #include <wayfire/util/duration.hpp>
 
 class vswitch_view_transformer : public wf::view_2D
 {
-    public:
-        static const std::string name;
-        vswitch_view_transformer(wayfire_view view) : view_2D(view) {}
-        virtual uint32_t get_z_order() override { return wf::TRANSFORMER_BLUR - 1; }
+  public:
+    static const std::string name;
+    vswitch_view_transformer(wayfire_view view) : view_2D(view) {}
+    virtual uint32_t get_z_order() override { return wf::TRANSFORMER_BLUR - 1; }
 };
 const std::string vswitch_view_transformer::name = "vswitch-transformer";
 
@@ -34,15 +31,19 @@ class vswitch_animation_t : public duration_t
 
 class vswitch : public wf::plugin_interface_t
 {
-    private:
-        wf::activator_callback callback_left, callback_right, callback_up, callback_down;
-        wf::activator_callback callback_win_left, callback_win_right, callback_win_up, callback_win_down;
+  private:
+    wf::activator_callback callback_left, callback_right, callback_up, callback_down;
+    wf::activator_callback callback_win_left, callback_win_right, callback_win_up, callback_win_down;
 
-        wf::gesture_callback gesture_cb;
-        vswitch_animation_t animation;
-        wayfire_view grabbed_view = nullptr;
+    wf::option_wrapper_t<int> gap{"vswitch/gap"};
+    wf::option_wrapper_t<wf::color_t> background_color{"vswitch/background"};
 
-    public:
+    vswitch_animation_t animation;
+    wayfire_view grabbed_view = nullptr;
+
+    std::unique_ptr<wf::workspace_wall_t> wall;
+
+  public:
     wayfire_view get_top_view()
     {
         auto ws = output->workspace->get_current_workspace();
@@ -90,6 +91,12 @@ class vswitch : public wf::plugin_interface_t
         animation = vswitch_animation_t{
             wf::option_wrapper_t<int> {"vswitch/duration"}};
         output->connect_signal("set-workspace-request", &on_set_workspace_request);
+
+        output->connect_signal("view-disappeared", &on_grabbed_view_disappear);
+        output->connect_signal("detach-view", &on_grabbed_view_disappear);
+
+        wall = std::make_unique<wf::workspace_wall_t>(output);
+        wall->connect_signal("frame", &on_frame);
     }
 
     inline bool is_active()
@@ -109,7 +116,12 @@ class vswitch : public wf::plugin_interface_t
             view = nullptr;
 
         if (view && !grabbed_view)
+        {
             grabbed_view = view;
+            view->add_transformer(std::make_unique<vswitch_view_transformer>(view),
+                vswitch_view_transformer::name);
+            view->set_visible(false); // view is rendered as overlay
+        }
 
         /* Make sure that when we add this direction, we won't go outside
          * of the workspace grid */
@@ -124,7 +136,23 @@ class vswitch : public wf::plugin_interface_t
         return true;
     }
 
-    wf::signal_callback_t on_set_workspace_request = [=] (wf::signal_data_t *data)
+    void unset_grabbed_view()
+    {
+        if (!this->grabbed_view)
+            return;
+
+        this->grabbed_view->set_visible(true);
+        this->grabbed_view->pop_transformer(vswitch_view_transformer::name);
+        this->grabbed_view = nullptr;
+    }
+
+    wf::signal_connection_t on_grabbed_view_disappear = {[=] (wf::signal_data_t *data)
+    {
+        if (get_signaled_view(data) == this->grabbed_view)
+            unset_grabbed_view();
+    }};
+
+    wf::signal_connection_t on_set_workspace_request = {[=] (wf::signal_data_t *data)
     {
         if (is_active())
             return;
@@ -133,37 +161,18 @@ class vswitch : public wf::plugin_interface_t
         ev->carried_out = true;
         add_direction(ev->new_viewport.x - ev->old_viewport.x,
             ev->new_viewport.y - ev->old_viewport.y);
-    };
-
-    std::vector<wayfire_view> get_ws_views()
-    {
-        std::vector<wayfire_view> views;
-        for (auto& view : output->workspace->get_views_in_layer(wf::MIDDLE_LAYERS))
-        {
-            if (view != grabbed_view)
-                views.push_back(view);
-        }
-
-        return views;
-    }
-
-    void ensure_transformer(wayfire_view view)
-    {
-        if (!view->get_transformer(vswitch_view_transformer::name))
-        {
-            view->add_transformer(
-                std::make_unique<vswitch_view_transformer>(view),
-                vswitch_view_transformer::name);
-        }
-    }
+    }};
 
     bool start_switch()
     {
         if (!output->activate_plugin(grab_interface))
             return false;
 
-        output->render->add_effect(&update_animation, wf::OUTPUT_EFFECT_PRE);
-        output->render->set_redraw_always();
+        wall->set_gap_size(gap);
+        wall->set_viewport(wall->get_workspace_rectangle(
+                output->workspace->get_current_workspace()));
+        wall->set_background_color(background_color);
+        wall->start_output_renderer();
 
         animation.dx.set(0, 0);
         animation.dy.set(0, 0);
@@ -171,24 +180,51 @@ class vswitch : public wf::plugin_interface_t
         return true;
     }
 
-    wf::effect_hook_t update_animation = [=] ()
+    void render_overlay_view(const wf::framebuffer_t& fb)
     {
+        /* Update the grabbed view on idle, because we cannot damage while
+         * in render cycle. Also, capture current progress in lambda, because
+         * idle may happen much later in time with different time. */
+        double progress = animation.progress();
+
+        auto tr = dynamic_cast<wf::view_2D*>( grabbed_view->get_transformer(
+                vswitch_view_transformer::name).get());
+
+        static constexpr double smoothing_in = 0.4;
+        static constexpr double smoothing_out = 0.2;
+        static constexpr double smoothing_amount = 0.5;
+
+        if (progress <= smoothing_in) {
+            tr->alpha = 1.0 - (smoothing_amount / smoothing_in) * progress;
+        } else if (progress >= 1.0 - smoothing_out) {
+            tr->alpha = 1.0 - (smoothing_amount / smoothing_out) * (1.0 - progress);
+        } else {
+            tr->alpha = smoothing_amount;
+        }
+
+        grabbed_view->render_transformed(fb, fb.geometry);
+    }
+
+    wf::wl_idle_call idle_update_grabbed_view;
+    wf::signal_connection_t on_frame = {[=] (wf::signal_data_t* data)
+    {
+        auto start = wall->get_workspace_rectangle(
+            output->workspace->get_current_workspace());
+        auto size = output->get_screen_size();
+        wf::geometry_t viewport = {
+            (int)std::round(animation.dx * (size.width + gap) + start.x),
+            (int)std::round(animation.dy * (size.height + gap) + start.y),
+            start.width,
+            start.height,
+        };
+        wall->set_viewport(viewport);
+
+        render_overlay_view(static_cast<wf::wall_frame_event_t*>(data)->target);
+        output->render->schedule_redraw();
+
         if (!animation.running())
             return stop_switch();
-
-        auto screen_size = output->get_screen_size();
-        for (auto view : get_ws_views())
-        {
-            ensure_transformer(view);
-            auto tr = dynamic_cast<vswitch_view_transformer*> (
-                view->get_transformer(vswitch_view_transformer::name).get());
-
-            view->damage();
-            tr->translation_x = -animation.dx * screen_size.width;
-            tr->translation_y = -animation.dy * screen_size.height;
-            view->damage();
-        }
-    };
+    }};
 
     void slide_done()
     {
@@ -203,6 +239,7 @@ class vswitch : public wf::plugin_interface_t
 
         if (grabbed_view)
         {
+            grabbed_view->pop_transformer(vswitch_view_transformer::name);
             auto wm = grabbed_view->get_wm_geometry();
             grabbed_view->move(wm.x + animation.dx.end * output_g.width,
                 wm.y + animation.dy.end * output_g.height);
@@ -221,14 +258,11 @@ class vswitch : public wf::plugin_interface_t
     void stop_switch()
     {
         slide_done();
-        grabbed_view = nullptr;
+        unset_grabbed_view();
 
-        for (auto view : get_ws_views())
-            view->pop_transformer(vswitch_view_transformer::name);
-
+        wall->stop_output_renderer();
+        wall->set_viewport({0, 0, 0, 0});
         output->deactivate_plugin(grab_interface);
-        output->render->rem_effect(&update_animation);
-        output->render->set_redraw_always(false);
     }
 
     void fini()
@@ -245,10 +279,6 @@ class vswitch : public wf::plugin_interface_t
         output->rem_binding(&callback_win_right);
         output->rem_binding(&callback_win_up);
         output->rem_binding(&callback_win_down);
-
-        output->rem_binding(&gesture_cb);
-        output->disconnect_signal("set-workspace-request",
-            &on_set_workspace_request);
     }
 };
 
