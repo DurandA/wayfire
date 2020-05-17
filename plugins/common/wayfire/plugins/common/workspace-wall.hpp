@@ -11,6 +11,19 @@
 
 namespace wf
 {
+
+/**
+ * When the workspace wall is rendered via a render hook, the frame event
+ * is emitted on each frame.
+ *
+ * The target framebuffer is passed as signal data.
+ */
+struct wall_frame_event_t : public signal_data_t
+{
+    const wf::framebuffer_t& target;
+    wall_frame_event_t(const wf::framebuffer_t& t) : target(t) {}
+};
+
 /**
  * A helper class to render workspaces arranged in a grid.
  */
@@ -127,7 +140,9 @@ class workspace_wall_t : public wf::signal_provider_t
         }
 
         OpenGL::render_end();
-        this->emit_signal("frame", nullptr);
+
+        wall_frame_event_t data{fb};
+        this->emit_signal("frame", &data);
     }
 
     /**
