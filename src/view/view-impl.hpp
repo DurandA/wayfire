@@ -57,6 +57,7 @@ class view_interface_t::view_priv_impl
     uint32_t edges = 0;
     int in_continuous_move = 0;
     int in_continuous_resize = 0;
+    int visibility_counter = 1;
 
     wf::safe_list_t<std::shared_ptr<view_transform_block_t>> transforms;
 
@@ -65,7 +66,7 @@ class view_interface_t::view_priv_impl
         wf::region_t cached_damage;
         bool valid() { return this->fb != (uint32_t)-1; }
     } offscreen_buffer;
-    
+
     wlr_box minimize_hint = { 0, 0, 0, 0 };
 };
 

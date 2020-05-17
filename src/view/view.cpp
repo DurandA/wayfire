@@ -524,6 +524,9 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state)
 
 bool wf::view_interface_t::is_visible()
 {
+    if (view_impl->visibility_counter <= 0)
+        return false;
+
     if (is_mapped())
         return true;
 
@@ -541,6 +544,16 @@ bool wf::view_interface_t::is_visible()
     } else {
         return view_impl->ref_cnt >= 1;
     }
+}
+
+void wf::view_interface_t::set_visible(bool visible)
+{
+    this->view_impl->visibility_counter += (visible ? 1 : -1);
+    if (this->view_impl->visibility_counter > 1) {
+        LOGE("set_visible(true) called more often than set_visible(false)!");
+    }
+
+    this->damage();
 }
 
 void wf::view_interface_t::damage()

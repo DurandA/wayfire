@@ -254,6 +254,13 @@ class view_interface_t : public surface_interface_t, public wf::object_base_t
     /** @return true if the view is visible */
     virtual bool is_visible();
 
+    /**
+     * Change the view visibility. Visibility requests are counted, i.e if the
+     * view is made invisible two times, it needs to be made visible two times
+     * before it is visible again.
+     */
+    virtual void set_visible(bool visible);
+
     /** Damage the whole view and add the damage to its output */
     virtual void damage();
 
