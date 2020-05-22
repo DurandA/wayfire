@@ -16,6 +16,7 @@ extern "C"
 #define class class_t
 #define static
 #include <wlr/xwayland.h>
+#include <wlr/xcursor.h>
 #undef static
 #undef class
 #endif
@@ -661,6 +662,17 @@ void wf::xwayland_set_seat(wlr_seat *seat)
         wlr_xwayland_set_seat(xwayland_handle,
             wf::get_core().get_current_seat());
     }
+#endif
+}
+
+void wf::xwayland_set_cursor(wlr_xcursor_image *image)
+{
+#if WLR_HAS_XWAYLAND
+    if (!xwayland_handle)
+        return;
+    wlr_xwayland_set_cursor(xwayland_handle, image->buffer,
+        image->width * 4, image->width, image->height,
+        image->hotspot_x, image->hotspot_y);
 #endif
 }
 

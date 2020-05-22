@@ -10,6 +10,7 @@
 extern "C"
 {
 #include <wlr/types/wlr_foreign_toplevel_management_v1.h>
+struct wlr_xcursor_image;
 }
 
 // for emit_map_*()
@@ -207,6 +208,7 @@ void init_xwayland();
 void init_layer_shell();
 
 void xwayland_set_seat(wlr_seat *seat);
+void xwayland_set_cursor(wlr_xcursor_image *image);
 int xwayland_get_display();
 
 void init_desktop_apis();

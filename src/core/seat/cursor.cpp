@@ -1,6 +1,7 @@
 #include "cursor.hpp"
 #include "touch.hpp"
 #include "../core-impl.hpp"
+#include "../../view/view-impl.hpp"
 #include "input-manager.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/compositor-surface.hpp"
@@ -111,6 +112,12 @@ void wf_cursor::init_xcursor()
     }
 
     set_cursor("default");
+
+    auto default_cursor =
+        wlr_xcursor_manager_get_xcursor(xcursor, "left_ptr", 1);
+    if (default_cursor) {
+        wf::xwayland_set_cursor(default_cursor->images[0]);
+    }
 }
 
 void wf_cursor::load_xcursor_scale(float scale)
