@@ -65,7 +65,10 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
     wf::signal_connection_t output_geometry_changed{[this] (wf::signal_data_t*)
     {
         if (is_mapped())
-            move(geometry.x, geometry.y);
+        {
+            auto wm_geometry = get_wm_geometry();
+            move(wm_geometry.x, wm_geometry.y);
+        }
     }};
 
   public:
