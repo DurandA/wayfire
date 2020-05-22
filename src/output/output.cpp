@@ -213,14 +213,35 @@ void wf::output_impl_t::update_active_view(wayfire_view v, uint32_t flags)
 
 void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
 {
+    const auto& make_view_visible = [this, flags] (wayfire_view view)
+    {
+        if (view->minimized)
+            view->minimize_request(false);
+
+        if (flags & FOCUS_VIEW_RAISE)
+            workspace->bring_to_front(view);
+    };
+
     if (v && workspace->get_view_layer(v) < wf::get_core().get_focused_layer())
     {
         auto active_view = get_active_view();
         if (active_view && active_view->get_app_id().find("$unfocus") == 0)
-            return focus_view(nullptr, false);
-
-        LOGD("Denying focus request for a view from a lower layer than the"
-            " focused layer");
+        {
+            /* This is the case where for ex. a panel has grabbed input focus,
+             * but user has clicked on another view so we want to dismiss the
+             * grab. We can't do that straight away because the client still
+             * holds the focus layer request.
+             *
+             * Instead, we want to deactive the $unfocus view, so that it can
+             * release the grab. At the same time, we bring the to-be-focused
+             * view on top, so that it gets the focus next. */
+            update_active_view(nullptr, flags);
+            make_view_visible(v);
+        } else
+        {
+            LOGD("Denying focus request for a view from a lower layer than the"
+                " focused layer");
+        }
         return;
     }
 
@@ -236,20 +257,13 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
     /* If no keyboard focus surface is set, then we don't want to focus the view */
     if (v->get_keyboard_focus_surface() || interactive_view_from_view(v.get()))
     {
-        /* We must make sure the view which gets focus is visible on the
-         * current workspace */
-        if (v->minimized)
-            v->minimize_request(false);
-
+        make_view_visible(v);
         update_active_view(v, flags);
-        if (flags & FOCUS_VIEW_RAISE)
-            workspace->bring_to_front(v);
 
         focus_view_signal data;
         data.view = v;
         emit_signal("focus-view", &data);
     }
-
 }
 
 void wf::output_impl_t::focus_view(wayfire_view v, bool raise)
