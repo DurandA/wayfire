@@ -772,6 +772,8 @@ namespace wf
                 changed_fields |= wf::OUTPUT_SCALE_CHANGE;
             if (this->current_state.transform != state.transform)
                 changed_fields |= wf::OUTPUT_TRANSFORM_CHANGE;
+            if (this->current_state.position != state.position)
+                changed_fields |= wf::OUTPUT_POSITION_CHANGE;
 
             this->current_state = state;
 
@@ -1122,7 +1124,7 @@ namespace wf
                 }
             }
 
-            /* Second: enable outputs */
+            /* Second: enable outputs with fixed positions. */
             int count_enabled = 0;
             for (auto& entry : config)
             {
@@ -1130,21 +1132,44 @@ namespace wf
                 auto& state = entry.second;
                 auto& lo = this->outputs[handle];
 
-                if (state.source & OUTPUT_IMAGE_SOURCE_SELF)
+                if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
+                    entry.second.position != output_state_t::default_position)
                 {
                     ++count_enabled;
-                    if (entry.second.position != output_state_t::default_position) {
-                        wlr_output_layout_add(output_layout, handle,
-                            state.position.x, state.position.y);
-                    } else {
-                        wlr_output_layout_add_auto(output_layout, handle);
-                    }
+                    wlr_output_layout_add(output_layout, handle,
+                        state.position.x, state.position.y);
+                    lo->apply_state(state, shutdown_received);
+                }
+            }
+
+            /*
+             * Third: enable dynamically positioned outputs.
+             * Since outputs with fixed positions were already added, we know
+             * that the outputs here will not be moved after they are added to
+             * the output_layout.
+             */
+            for (auto& entry : config)
+            {
+                auto& handle = entry.first;
+                auto& lo = this->outputs[handle];
+                auto state = entry.second;
+                if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
+                    entry.second.position == output_state_t::default_position)
+                {
+                    ++count_enabled;
+                    wlr_output_layout_add_auto(output_layout, handle);
+
+                    /* Get the correct position */
+                    auto box = wlr_output_layout_get_box(output_layout, handle);
+                    assert(box);
+                    state.position.x = box->x;
+                    state.position.y = box->y;
 
                     lo->apply_state(state, shutdown_received);
                 }
             }
 
-            /* Third: enable mirrored outputs */
+            /* Fourth: enable mirrored outputs */
             for (auto& entry : config)
             {
                 auto& handle = entry.first;

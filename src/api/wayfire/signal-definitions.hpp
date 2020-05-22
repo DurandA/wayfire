@@ -142,6 +142,8 @@ enum output_config_field_t
     OUTPUT_SCALE_CHANGE     = (1 << 2),
     /** Output transform changed */
     OUTPUT_TRANSFORM_CHANGE = (1 << 3),
+    /** Output position changed */
+    OUTPUT_POSITION_CHANGE  = (1 << 4),
 };
 
 struct output_state_t;
