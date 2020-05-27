@@ -210,7 +210,6 @@ namespace wf
         /* A note: at this point, some views might already have been deleted */
     }
 
-    constexpr wf::point_t output_state_t::default_position;
     bool output_state_t::operator == (const output_state_t& other) const
     {
         if (source == OUTPUT_IMAGE_SOURCE_NONE)
@@ -225,7 +224,9 @@ namespace wf
         bool eq = true;
 
         eq &= source == other.source;
-        eq &= position == other.position;
+        eq &= automatic_positioning == other.automatic_positioning;
+        if (!automatic_positioning)
+            eq &= position == other.position;
         eq &= (mode.width == other.mode.width);
         eq &= (mode.height == other.mode.height);
         eq &= (mode.refresh == other.mode.refresh);
@@ -405,14 +406,15 @@ namespace wf
         output_state_t load_state_from_config()
         {
             output_state_t state;
-
-            state.position = output_state_t::default_position;
             auto set_position = position_opt->get_value_str();
             if (set_position != default_value)
             {
                 auto value = parse_output_layout(set_position);
                 if (value.second)
+                {
+                    state.automatic_positioning = false;
                     state.position = value.first;
+                }
             }
 
             /* Make sure we can use custom modes that are
@@ -1133,7 +1135,7 @@ namespace wf
                 auto& lo = this->outputs[handle];
 
                 if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
-                    entry.second.position != output_state_t::default_position)
+                    !entry.second.automatic_positioning)
                 {
                     ++count_enabled;
                     wlr_output_layout_add(output_layout, handle,
@@ -1154,7 +1156,7 @@ namespace wf
                 auto& lo = this->outputs[handle];
                 auto state = entry.second;
                 if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
-                    entry.second.position == output_state_t::default_position)
+                    entry.second.automatic_positioning)
                 {
                     ++count_enabled;
                     wlr_output_layout_add_auto(output_layout, handle);

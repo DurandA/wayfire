@@ -42,11 +42,10 @@ namespace wf
          * If source is mirror, then only mirror_from and mode have a meaning */
         output_image_source_t source = OUTPUT_IMAGE_SOURCE_INVALID;
 
-        /** the position of the output in the compositor space.
-         * if position is equal to the default_position defined below,
-         * this means that it should be positioned automatically */
-        static constexpr wf::point_t default_position = {0x3f3f3f3f, 0x3f3f3f3f};
-        wf::point_t position = default_position;
+        /** Whether the output should be automatically positioned. */
+        bool automatic_positioning = true;
+        /** The position of the output in the global coordinate space.  */
+        wf::point_t position = {0, 0};
 
         /** Only width, height and refresh fields are used. */
         wlr_output_mode mode;
