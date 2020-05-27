@@ -53,6 +53,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
             auto surface = theme.render_text(view->get_title(),
                 target_width, target_height);
             cairo_surface_upload_to_texture(surface, title_texture.tex);
+            cairo_surface_destroy(surface);
             title_texture.current_text = view->get_title();
         }
     }
